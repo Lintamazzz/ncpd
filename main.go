@@ -19,6 +19,19 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
+// DownloadOptions 定义用户选择的下载选项
+type DownloadOptions struct {
+	Video        bool
+	VideoDetails bool
+	Thumbnail    bool
+	Danmaku      bool
+}
+
+// HasAnySelection 检查是否有任何选择
+func (d *DownloadOptions) HasAnySelection() bool {
+	return d.Video || d.VideoDetails || d.Thumbnail || d.Danmaku
+}
+
 func main() {
 	// 0. 用户输入关键词，搜索并选择要下载的频道
 	fcSiteID, err := selectChannelDomain()
@@ -45,17 +58,29 @@ func main() {
 		return
 	}
 
-	// 4. 下载视频
-	downloadVideos(selectedVideos)
+	// 4. 选择要下载的内容类型
+	downloadOptions := selectDownloadOptions()
+	if !downloadOptions.HasAnySelection() {
+		fmt.Println("\n❌ 未选择任何下载内容，程序退出")
+		return
+	}
 
-	// 5. 保存视频详情信息
-	saveVideoDetails(fcSiteID, selectedVideos)
+	// 5. 根据选择执行相应的下载任务
+	if downloadOptions.Video {
+		downloadVideos(selectedVideos)
+	}
 
-	// 6. 下载视频封面
-	downloadThumbnails(selectedVideos)
+	if downloadOptions.VideoDetails {
+		saveVideoDetails(fcSiteID, selectedVideos)
+	}
 
-	// 7. 下载视频弹幕
-	downloadDanmaku(selectedVideos)
+	if downloadOptions.Thumbnail {
+		downloadThumbnails(selectedVideos)
+	}
+
+	if downloadOptions.Danmaku {
+		downloadDanmaku(fcSiteID, selectedVideos)
+	}
 
 	// 打印 refresh_token 用于后续的 token 刷新
 	fmt.Printf("\n最近的 refresh_token: %s \n", auth.GetRefreshToken())
@@ -329,8 +354,98 @@ func downloadImage(url string, filePath string) error {
 	return nil
 }
 
-func downloadDanmaku(selectedVideos []video.VideoDetails) {
-	// todo
+func downloadDanmaku(fcSiteID int, selectedVideos []video.VideoDetails) {
+	// 记录成功和失败的视频数量
+	var successCount, failCount int
+	// 记录失败的视频列表
+	var failedVideos []string
+
+	for i, v := range selectedVideos {
+		// 打印视频标题
+		fmt.Printf("\n%d. %s\n", i+1, v.Title)
+
+		// 确定保存路径和文件名
+		saveDir, _ := getSavePathAndName(v)
+		saveName := "danmaku"
+
+		details, err := video.GetVideoDetails(fcSiteID, v.ContentCode)
+		if err != nil {
+			fmt.Printf("❌ 获取视频详情失败: %v\n", err)
+			failCount++
+			failedVideos = append(failedVideos, v.Title)
+			continue
+		}
+
+		// 检查是否有评论设置
+		if details.VideoCommentSetting == nil || details.VideoCommentSetting.CommentGroupID == "" {
+			fmt.Printf("❌ 视频没有评论设置或评论组ID为空\n")
+			failCount++
+			failedVideos = append(failedVideos, v.Title)
+			continue
+		}
+
+		// 获取评论用户token
+		commentsUserToken, err := video.GetCommentsUserToken(v.ContentCode)
+		if err != nil {
+			fmt.Printf("❌ 获取评论用户token失败: %v\n", err)
+			failCount++
+			failedVideos = append(failedVideos, v.Title)
+			continue
+		}
+
+		// 获取所有弹幕
+		fmt.Printf("  获取弹幕中...\n")
+		allComments, err := video.GetAllComments(commentsUserToken, details.VideoCommentSetting.CommentGroupID)
+		if err != nil {
+			fmt.Printf("❌ 获取弹幕失败: %v\n", err)
+			failCount++
+			failedVideos = append(failedVideos, v.Title)
+			continue
+		}
+
+		// 保存弹幕为JSON文件
+		commentsJSON, err := json.MarshalIndent(allComments, "", "  ")
+		if err != nil {
+			fmt.Printf("❌ JSON序列化失败: %v\n", err)
+			failCount++
+			failedVideos = append(failedVideos, v.Title)
+			continue
+		}
+
+		// 确保保存目录存在
+		if err := os.MkdirAll(saveDir, 0755); err != nil {
+			fmt.Printf("❌ 创建目录失败: %v\n", err)
+			failCount++
+			failedVideos = append(failedVideos, v.Title)
+			continue
+		}
+
+		// 保存弹幕文件
+		danmakuFile := filepath.Join(saveDir, saveName+".json")
+		if err := os.WriteFile(danmakuFile, commentsJSON, 0644); err != nil {
+			fmt.Printf("❌ 保存弹幕失败: %v\n", err)
+			failCount++
+			failedVideos = append(failedVideos, v.Title)
+			continue
+		}
+
+		fmt.Printf("✅ 已保存弹幕: %s (共 %d 条)\n", danmakuFile, len(allComments))
+		successCount++
+	}
+
+	// 打印最终统计信息
+	fmt.Printf("\n" + strings.Repeat("=", 50) + "\n")
+	fmt.Printf("成功下载: %d 个弹幕文件\n", successCount)
+	fmt.Printf("下载失败: %d 个弹幕文件\n", failCount)
+	fmt.Printf("总计: %d 个弹幕文件\n", len(selectedVideos))
+
+	if failCount > 0 {
+		fmt.Printf("\n失败的弹幕文件列表:\n")
+		for i, title := range failedVideos {
+			fmt.Printf("  %d. %s\n", i+1, title)
+		}
+	}
+	fmt.Printf(strings.Repeat("=", 50) + "\n")
 }
 
 // isLiveArchive 判断视频是否为生放送アーカイブ
@@ -609,6 +724,49 @@ func selectVideos(videoList []video.VideoDetails) []video.VideoDetails {
 	}
 
 	return selectedVideos
+}
+
+// selectDownloadOptions 让用户选择要下载的内容类型
+func selectDownloadOptions() *DownloadOptions {
+	options := &DownloadOptions{}
+
+	// 创建选项列表
+	var selectedOptions []string
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewMultiSelect[string]().
+				Title("请选择要下载的内容类型").
+				Options(
+					huh.Option[string]{Key: "视频", Value: "视频"},
+					huh.Option[string]{Key: "视频封面", Value: "视频封面"},
+					huh.Option[string]{Key: "视频弹幕", Value: "视频弹幕"},
+					huh.Option[string]{Key: "视频详细信息", Value: "视频详细信息"},
+				).
+				Value(&selectedOptions),
+		),
+	)
+
+	// 运行表单
+	if err := form.Run(); err != nil {
+		fmt.Printf("❌ 选择下载内容时出错: %v\n", err)
+		return &DownloadOptions{}
+	}
+
+	// 根据选择设置结构体字段
+	for _, option := range selectedOptions {
+		switch option {
+		case "视频":
+			options.Video = true
+		case "视频详细信息":
+			options.VideoDetails = true
+		case "视频封面":
+			options.Thumbnail = true
+		case "视频弹幕":
+			options.Danmaku = true
+		}
+	}
+
+	return options
 }
 
 // confirmDownload 确认下载
