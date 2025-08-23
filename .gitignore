@@ -1,0 +1,41 @@
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# Go 构建文件
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 测试二进制文件
+*.test
+
+# 覆盖率报告
+*.out
+
+# Go 工作区文件
+go.work
+
+# IDE 文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+
+# 临时文件
+tmp/
+temp/
+
+# 输出目录
+out/
