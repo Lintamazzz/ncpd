@@ -32,23 +32,41 @@ func main() {
 		}
 	}
 
-	// 将 videoList 转换为 JSON 格式
-	jsonData, err := json.MarshalIndent(videoList, "", "  ")
+	videoIndex := 36
+
+	// 测试打印视频详情
+	fmt.Printf("\n测试打印视频详情: \n")
+	videoDetails, _ := video.GetVideoDetails(387, videoList[videoIndex].ContentCode)
+	jsonData, _ := json.MarshalIndent(videoDetails, "", "  ")
+	fmt.Println(string(jsonData))
+
+	// 获取 comments_user_token
+	commentsUserToken, _ := video.GetCommentsUserToken(videoList[videoIndex].ContentCode)
+	fmt.Println(commentsUserToken)
+
+	// 获取弹幕
+	// comments, _ := video.GetComments(commentsUserToken, videoDetails.VideoCommentSetting.CommentGroupID, 0)
+	// jsonData, _ = json.MarshalIndent(comments, "", "  ")
+	// fmt.Println(string(jsonData))
+
+	// 获取所有弹幕
+	allComments, _ := video.GetAllComments(commentsUserToken, videoDetails.VideoCommentSetting.CommentGroupID)
+
+	// 虽然不是和视频详情里记录的评论数完全一致，但基本非常接近
+	// 实际获取到的数量和 nicochannel_comments 获取到的数量是一致的
+	fmt.Printf("应有弹幕 %d 条，实际获取到 %d 条\n", videoDetails.VideoAggregateInfo.NumberOfComments, len(allComments))
+	toJsonFile(allComments, "./out/all_comments.json")
+}
+
+func toJsonFile(data any, outPath string) {
+	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		log.Fatalf("JSON 序列化失败: %v", err)
 	}
 
-	// 写入到 videoList.json 文件
-	outPath := "./out/all_videos.json"
 	err = os.WriteFile(outPath, jsonData, 0644)
 	if err != nil {
 		log.Fatalf("写入文件失败: %v", err)
 	}
 	fmt.Printf("\n已成功输出到 %s\n", outPath)
-
-	// 测试打印视频详情
-	fmt.Printf("\n测试打印视频详情: \n")
-	videoDetails, _ := video.GetVideoDetails(387, videoList[0].ContentCode)
-	jsonData, _ = json.MarshalIndent(videoDetails, "", "  ")
-	fmt.Println(string(jsonData))
 }
