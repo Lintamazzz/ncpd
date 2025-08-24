@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        /* 选中元素 - 右键 - Copy - Copy Styles */
+        .Article {
+            text-size-adjust: 100%;
+            --swiper-theme-color: #007aff;
+            --swiper-navigation-size: 44px;
+            color: rgba(0, 0, 0, 0.8);
+            letter-spacing: 0px;
+            font-weight: 400;
+            line-height: 1.43;
+            font-size: 0.875rem;
+            font-family: Roboto, Noto Sans JP, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            box-sizing: border-box;
+            max-width: 816px;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 1.5rem;
+            padding: 0rem 1.5rem;
+        }
+
+        .Title {
+            text-size-adjust: 100%;
+            --swiper-theme-color: #007aff;
+            --swiper-navigation-size: 44px;
+            color: rgba(0, 0, 0, 0.8);
+            letter-spacing: 0px;
+            font-weight: 400;
+            line-height: 1.43;
+            font-size: 0.875rem;
+            font-family: Roboto, Noto Sans JP, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            box-sizing: border-box;
+            margin-bottom: 2rem;
+        }
+
+        .Title h6 {
+            text-size-adjust: 100%;
+            --swiper-theme-color: #007aff;
+            --swiper-navigation-size: 44px;
+            color: rgba(0, 0, 0, 0.8);
+            -webkit-font-smoothing: antialiased;
+            box-sizing: border-box;
+            margin: 0px;
+            letter-spacing: 0px;
+            font-family: Roboto, "Noto Sans JP", sans-serif;
+            line-height: 1.6;
+            font-weight: 500;
+            word-break: break-all;
+            font-size: 18px;
+        }
+
+        .PublishAt {
+            text-size-adjust: 100%;
+            --swiper-theme-color: #007aff;
+            --swiper-navigation-size: 44px;
+            letter-spacing: 0px;
+            font-weight: 400;
+            line-height: 1.43;
+            font-family: Roboto, Noto Sans JP, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            box-sizing: border-box;
+            display: flex;
+            -webkit-box-pack: justify;
+            justify-content: space-between;
+            -webkit-box-align: center;
+            align-items: center;
+            color: rgba(22, 22, 25, 0.6);
+            font-size: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .PublishAt span {
+            text-size-adjust: 100%;
+            --swiper-theme-color: #007aff;
+            --swiper-navigation-size: 44px;
+            -webkit-font-smoothing: antialiased;
+            color: rgba(22, 22, 25, 0.6);
+            box-sizing: border-box;
+            margin: 0px;
+            letter-spacing: 0px;
+            font-family: Roboto, "Noto Sans JP", sans-serif;
+            font-weight: 400;
+            font-size: 0.75rem;
+            line-height: 1.66;
+        }
+
+
+        .Content {
+            text-size-adjust: 100%;
+            --swiper-theme-color: #007aff;
+            --swiper-navigation-size: 44px;
+            color: rgba(0, 0, 0, 0.8);
+            letter-spacing: 0px;
+            font-weight: 400;
+            line-height: 1.43;
+            font-size: 0.875rem;
+            font-family: Roboto, Noto Sans JP, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            box-sizing: border-box;
+            margin-bottom: 1.5rem;
+            word-break: break-all;
+        }
+
+
+        .Content p {
+            text-size-adjust: 100%;
+            --swiper-theme-color: #007aff;
+            --swiper-navigation-size: 44px;
+            color: rgba(0, 0, 0, 0.8);
+            letter-spacing: 0px;
+            font-weight: 400;
+            line-height: 1.43;
+            font-size: 0.875rem;
+            font-family: Roboto, Noto Sans JP, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            word-break: break-all;
+            box-sizing: border-box;
+        }
+
+
+        .Content img {
+            max-width: 100%;
+        }
+
+        .Thumbnail {
+            margin-bottom: 1.5rem;
+        }
+
+        .Thumbnail img {
+            max-width: 100%;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="Article">
+
+        <div class="Thumbnail">
+            <img src="./thumbnail.jpg">
+        </div>
+
+        <div class="Title">
+            <h6>
+                {{.Title}}
+            </h6>
+        </div>
+
+        <div class="PublishAt">
+            <span>{{.PublishAt}}</span>
+        </div>
+
+        <div class="Content">
+            {{.Contents}}
+        </div>
+    </div>
+
+    
+    <br><br><br><br><br><br><br>
+</body>
+
+</html>
