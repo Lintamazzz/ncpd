@@ -56,50 +56,59 @@ func main() {
 	baseSaveDir := filepath.Join("./out", channelName)
 	fmt.Printf("📁 保存目录: %s\n", baseSaveDir)
 
-	// 1. 获取视频列表
-	videoList, _ := video.GetVideoList(fcSiteID)
-	fmt.Printf("\n=== 数据获取完成 ===\n")
-	fmt.Printf("总共获取到 %d 个视频\n", len(videoList))
-
-	// 2. 用户选择要下载的视频
-	selectedVideos := selectVideos(videoList)
-	if len(selectedVideos) == 0 {
-		fmt.Println("\n❌ 未选择任何视频，程序退出")
-		return
-	}
-
-	// 3. 确认下载
-	if !confirmDownload(selectedVideos) {
-		fmt.Println("\n❌ 用户取消下载，程序退出")
-		return
-	}
-
-	// 4. 选择要下载的内容类型
+	// 1. 首先询问用户要下载什么类型的内容
 	downloadOptions := selectDownloadOptions()
 	if !downloadOptions.HasAnySelection() {
 		fmt.Println("\n❌ 未选择任何下载内容，程序退出")
 		return
 	}
 
-	// 5. 根据选择执行相应的下载任务
-	if downloadOptions.Video {
-		downloadVideos(baseSaveDir, selectedVideos)
-	}
+	// 2. 根据选择的内容类型执行相应的操作
 
-	if downloadOptions.VideoDetails {
-		saveVideoDetails(baseSaveDir, fcSiteID, selectedVideos)
-	}
-
-	if downloadOptions.Thumbnail {
-		downloadThumbnails(baseSaveDir, selectedVideos)
-	}
-
-	if downloadOptions.Danmaku {
-		downloadDanmaku(baseSaveDir, fcSiteID, selectedVideos)
-	}
-
+	// 如果选择了新闻，先下载新闻
 	if downloadOptions.News {
+		if !confirmNewsDownload() {
+			fmt.Println("\n❌ 用户取消下载新闻，程序退出")
+			return
+		}
 		downloadNews(baseSaveDir, fcSiteID)
+	}
+
+	// 如果选择了视频相关的内容，需要获取视频列表
+	if downloadOptions.Video || downloadOptions.VideoDetails || downloadOptions.Thumbnail || downloadOptions.Danmaku {
+		videoList, _ := video.GetVideoList(fcSiteID)
+		fmt.Printf("\n=== 数据获取完成 ===\n")
+		fmt.Printf("总共获取到 %d 个视频\n", len(videoList))
+
+		// 用户选择要下载的视频
+		selectedVideos := selectVideos(videoList)
+		if len(selectedVideos) == 0 {
+			fmt.Println("\n❌ 未选择任何视频，程序退出")
+			return
+		}
+
+		// 确认下载
+		if !confirmDownload(selectedVideos) {
+			fmt.Println("\n❌ 用户取消下载，程序退出")
+			return
+		}
+
+		// 根据选择执行相应的下载任务
+		if downloadOptions.Video {
+			downloadVideos(baseSaveDir, selectedVideos)
+		}
+
+		if downloadOptions.VideoDetails {
+			saveVideoDetails(baseSaveDir, fcSiteID, selectedVideos)
+		}
+
+		if downloadOptions.Thumbnail {
+			downloadThumbnails(baseSaveDir, selectedVideos)
+		}
+
+		if downloadOptions.Danmaku {
+			downloadDanmaku(baseSaveDir, fcSiteID, selectedVideos)
+		}
 	}
 
 	// 打印 refresh_token 用于后续的 token 刷新
@@ -840,7 +849,7 @@ func selectVideos(videoList []video.VideoDetails) []video.VideoDetails {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewMultiSelect[int]().
-				Title("请选择要下载的视频").
+				Title("请选择视频").
 				Options(options...).
 				Value(&selectedIndices),
 		),
@@ -909,7 +918,7 @@ func selectDownloadOptions() *DownloadOptions {
 	return options
 }
 
-// confirmDownload 确认下载
+// confirmDownload 确认下载视频
 func confirmDownload(selectedVideos []video.VideoDetails) bool {
 	// 构建视频列表描述
 	var videoListDesc strings.Builder
@@ -921,7 +930,7 @@ func confirmDownload(selectedVideos []video.VideoDetails) bool {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
-				Title(fmt.Sprintf("确认下载以下 %d 个视频：\n", len(selectedVideos))).
+				Title(fmt.Sprintf("确认选择以下 %d 个视频：\n", len(selectedVideos))).
 				Description(videoListDesc.String()).
 				Value(&confirmDownload),
 		),
@@ -929,7 +938,27 @@ func confirmDownload(selectedVideos []video.VideoDetails) bool {
 
 	// 运行确认表单
 	if err := form.Run(); err != nil {
-		fmt.Printf("❌ 确认下载时出错: %v\n", err)
+		fmt.Printf("❌ 确认选择时出错: %v\n", err)
+		return false
+	}
+
+	return confirmDownload
+}
+
+// confirmNewsDownload 确认下载新闻
+func confirmNewsDownload() bool {
+	var confirmDownload bool
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewConfirm().
+				Title("确认下载频道所有新闻？").
+				Value(&confirmDownload),
+		),
+	)
+
+	// 运行确认表单
+	if err := form.Run(); err != nil {
+		fmt.Printf("❌ 确认下载新闻时出错: %v\n", err)
 		return false
 	}
 
