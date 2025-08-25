@@ -71,7 +71,7 @@ func downloadAndReplaceImages(contents, customOutputDir string) (string, error) 
 	}
 
 	// 确定输出目录
-	outputDir := "./out/news"
+	outputDir := "./out/NEWS"
 	if customOutputDir != "" {
 		outputDir = customOutputDir
 	}

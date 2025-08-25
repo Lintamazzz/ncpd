@@ -107,7 +107,7 @@ func generateArticleHTML(article *news.Article, templateHTML string) error {
 	dirName := fmt.Sprintf("[%s] %s", publishDate, cleanTitle)
 
 	// 创建输出目录
-	outputDir := filepath.Join("out", "news", dirName)
+	outputDir := filepath.Join("out", "NEWS", dirName)
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("创建目录失败: %w", err)
 	}

@@ -42,6 +42,20 @@ func main() {
 		return
 	}
 
+	// 获取频道信息
+	fmt.Println("🔍 正在获取频道信息...")
+	channelInfo, err := channel.GetFanclubSiteInfo(fcSiteID)
+	if err != nil {
+		fmt.Printf("❌ 获取频道信息失败: %v\n", err)
+		return
+	}
+	fmt.Printf("✅ 频道信息获取成功: %s\n", channelInfo.FanclubSiteName)
+
+	// 创建基础保存目录
+	channelName := sanitizeFilename(channelInfo.FanclubSiteName)
+	baseSaveDir := filepath.Join("./out", channelName)
+	fmt.Printf("📁 保存目录: %s\n", baseSaveDir)
+
 	// 1. 获取视频列表
 	videoList, _ := video.GetVideoList(fcSiteID)
 	fmt.Printf("\n=== 数据获取完成 ===\n")
@@ -69,23 +83,23 @@ func main() {
 
 	// 5. 根据选择执行相应的下载任务
 	if downloadOptions.Video {
-		downloadVideos(selectedVideos)
+		downloadVideos(baseSaveDir, selectedVideos)
 	}
 
 	if downloadOptions.VideoDetails {
-		saveVideoDetails(fcSiteID, selectedVideos)
+		saveVideoDetails(baseSaveDir, fcSiteID, selectedVideos)
 	}
 
 	if downloadOptions.Thumbnail {
-		downloadThumbnails(selectedVideos)
+		downloadThumbnails(baseSaveDir, selectedVideos)
 	}
 
 	if downloadOptions.Danmaku {
-		downloadDanmaku(fcSiteID, selectedVideos)
+		downloadDanmaku(baseSaveDir, fcSiteID, selectedVideos)
 	}
 
 	if downloadOptions.News {
-		downloadNews(fcSiteID)
+		downloadNews(baseSaveDir, fcSiteID)
 	}
 
 	// 打印 refresh_token 用于后续的 token 刷新
@@ -93,7 +107,7 @@ func main() {
 	fmt.Printf("请保存到 .env 文件中，用于后续的 token 刷新 \n")
 }
 
-func downloadVideos(selectedVideos []video.VideoDetails) {
+func downloadVideos(baseSaveDir string, selectedVideos []video.VideoDetails) {
 	// 记录下载总耗时
 	startTime := time.Now()
 	// 记录成功、失败、跳过的视频数量
@@ -104,7 +118,7 @@ func downloadVideos(selectedVideos []video.VideoDetails) {
 	// 遍历选中的视频列表
 	for i, video := range selectedVideos {
 		// 确定保存路径和文件名
-		saveDir, saveName := getSavePathAndName(video)
+		saveDir, saveName := getSavePathAndName(video, baseSaveDir)
 
 		// 检查视频文件是否已经存在，如果存在则跳过下载
 		expectedFile := filepath.Join(saveDir, saveName+".ts")
@@ -212,7 +226,7 @@ func downloadVideo(url string, saveDir string, saveName string) error {
 	return nil
 }
 
-func saveVideoDetails(fcSiteID int, selectedVideos []video.VideoDetails) {
+func saveVideoDetails(baseSaveDir string, fcSiteID int, selectedVideos []video.VideoDetails) {
 	// 记录成功和失败的视频数量
 	var successCount, failCount int
 	// 记录失败的视频列表
@@ -223,7 +237,7 @@ func saveVideoDetails(fcSiteID int, selectedVideos []video.VideoDetails) {
 		fmt.Printf("\n%d. %s\n", i+1, v.Title)
 
 		// 确定保存路径和文件名
-		saveDir, _ := getSavePathAndName(v)
+		saveDir, _ := getSavePathAndName(v, baseSaveDir)
 		saveName := "video_details"
 
 		// 获取视频的详细信息
@@ -277,7 +291,7 @@ func saveVideoDetails(fcSiteID int, selectedVideos []video.VideoDetails) {
 	fmt.Printf(strings.Repeat("=", 50) + "\n")
 }
 
-func downloadThumbnails(selectedVideos []video.VideoDetails) {
+func downloadThumbnails(baseSaveDir string, selectedVideos []video.VideoDetails) {
 	// 记录成功和失败的视频数量
 	var successCount, failCount int
 	// 记录失败的视频列表
@@ -288,7 +302,7 @@ func downloadThumbnails(selectedVideos []video.VideoDetails) {
 		fmt.Printf("\n%d. %s\n", i+1, video.Title)
 
 		// 确定保存路径和文件名
-		saveDir, _ := getSavePathAndName(video)
+		saveDir, _ := getSavePathAndName(video, baseSaveDir)
 		saveName := "thumbnail"
 
 		// 检查缩略图URL是否为空
@@ -360,7 +374,7 @@ func downloadImage(url string, filePath string) error {
 	return nil
 }
 
-func downloadDanmaku(fcSiteID int, selectedVideos []video.VideoDetails) {
+func downloadDanmaku(baseSaveDir string, fcSiteID int, selectedVideos []video.VideoDetails) {
 	// 记录成功和失败的视频数量
 	var successCount, failCount int
 	// 记录失败的视频列表
@@ -371,7 +385,7 @@ func downloadDanmaku(fcSiteID int, selectedVideos []video.VideoDetails) {
 		fmt.Printf("\n%d. %s\n", i+1, v.Title)
 
 		// 确定保存路径和文件名
-		saveDir, _ := getSavePathAndName(v)
+		saveDir, _ := getSavePathAndName(v, baseSaveDir)
 		saveName := "danmaku"
 
 		details, err := video.GetVideoDetails(fcSiteID, v.ContentCode)
@@ -454,7 +468,7 @@ func downloadDanmaku(fcSiteID int, selectedVideos []video.VideoDetails) {
 	fmt.Printf(strings.Repeat("=", 50) + "\n")
 }
 
-func downloadNews(fcSiteID int) {
+func downloadNews(baseSaveDir string, fcSiteID int) {
 	fmt.Printf("\n=== 开始下载频道新闻 ===\n")
 
 	// 获取 token
@@ -506,7 +520,7 @@ func downloadNews(fcSiteID int) {
 		}
 
 		// 生成HTML文件
-		if err := generateArticleHTML(article, string(templateHTML)); err != nil {
+		if err := generateArticleHTML(article, string(templateHTML), baseSaveDir); err != nil {
 			fmt.Printf("❌ 生成HTML失败: %v\n", err)
 			failCount++
 			failedArticles = append(failedArticles, articleSummary.ArticelTitle)
@@ -534,7 +548,7 @@ func downloadNews(fcSiteID int) {
 }
 
 // generateArticleHTML 为单篇文章生成HTML文件
-func generateArticleHTML(article *news.Article, templateHTML string) error {
+func generateArticleHTML(article *news.Article, templateHTML string, baseSaveDir string) error {
 	// 清理文章标题作为文件夹名
 	cleanTitle := sanitizeFilename(article.ArticelTitle)
 
@@ -550,7 +564,7 @@ func generateArticleHTML(article *news.Article, templateHTML string) error {
 	dirName := fmt.Sprintf("[%s] %s", publishDate, cleanTitle)
 
 	// 创建输出目录
-	outputDir := filepath.Join("out", "news", dirName)
+	outputDir := filepath.Join(baseSaveDir, "NEWS", dirName)
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("创建目录失败: %w", err)
 	}
@@ -613,16 +627,16 @@ func sanitizeFilename(filename string) string {
 }
 
 // getSavePathAndName 根据视频类型确定保存路径和文件名
-func getSavePathAndName(video video.VideoDetails) (string, string) {
+func getSavePathAndName(video video.VideoDetails, baseSaveDir string) (string, string) {
 	cleanTitle := sanitizeFilename(video.Title)
 
 	if isLiveArchive(video) {
-		// 生放送 archive：保存到 ./out/live/视频标题/
-		saveDir := filepath.Join("./out", "live", cleanTitle)
+		// 生放送 archive：保存到 baseSaveDir/生放送/视频标题/
+		saveDir := filepath.Join(baseSaveDir, "生放送", cleanTitle)
 		return saveDir, cleanTitle
 	} else {
-		// 普通视频：保存到 ./out/video/视频标题/
-		saveDir := filepath.Join("./out", "video", cleanTitle)
+		// 普通视频：保存到 baseSaveDir/動画/视频标题/
+		saveDir := filepath.Join(baseSaveDir, "動画", cleanTitle)
 		return saveDir, cleanTitle
 	}
 }

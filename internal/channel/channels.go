@@ -103,3 +103,41 @@ func GetChannelByDomain(domain string) (*ContentProvider, error) {
 
 	return channelDomainResponse.Data.ContentProviders, nil
 }
+
+// FanclubSiteInfoResponse 表示 fanclub site 信息的 API 响应
+type FanclubSiteInfoResponse struct {
+	Data struct {
+		FanclubSite FanclubSiteInfo `json:"fanclub_site"`
+	} `json:"data"`
+}
+
+// FanclubSiteInfo 表示 fanclub site 的详细信息
+type FanclubSiteInfo struct {
+	Description       string `json:"description"`
+	FanclubSiteName   string `json:"fanclub_site_name"`
+	FaviconURL        string `json:"favicon_url"`
+	ThumbnailImageURL string `json:"thumbnail_image_url"`
+}
+
+// GetFanclubSiteInfo 根据 fc site id 获取 fanclub 信息
+func GetFanclubSiteInfo(siteID int) (*FanclubSiteInfo, error) {
+	client := resty.New()
+
+	baseURL := "https://api.nicochannel.jp/fc/fanclub_sites/%d/page_base_info"
+	URL := fmt.Sprintf(baseURL, siteID)
+
+	var fanclubSiteInfoResponse FanclubSiteInfoResponse
+	resp, err := client.R().
+		SetResult(&fanclubSiteInfoResponse).
+		Get(URL)
+
+	if err != nil {
+		return nil, fmt.Errorf("channel.GetFanclubSiteInfo: %w", err)
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("channel.GetFanclubSiteInfo: 状态码 %d", resp.StatusCode())
+	}
+
+	return &fanclubSiteInfoResponse.Data.FanclubSite, nil
+}
