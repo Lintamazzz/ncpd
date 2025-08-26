@@ -15,10 +15,6 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func ProcessArticle(article *Article, templateHTML string) (string, error) {
-	return ProcessArticleWithOutputDir(article, templateHTML, "")
-}
-
 // ProcessArticleWithOutputDir 处理文章并指定图片输出目录
 func ProcessArticleWithOutputDir(article *Article, templateHTML, outputDir string) (string, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(templateHTML))

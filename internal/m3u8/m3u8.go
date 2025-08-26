@@ -73,15 +73,6 @@ func GetBestQuality(streams []StreamInfo) *StreamInfo {
 	return &bestStream
 }
 
-// GetQualityByResolution 根据分辨率获取对应的流信息
-func GetQualityByResolution(streams []StreamInfo, resolution string) *StreamInfo {
-	for _, stream := range streams {
-		if stream.Resolution == resolution {
-			return &stream
-		}
-	}
-	return nil
-}
 
 // GetIndex 获取index.m3u8文件内容
 func GetIndex(sessionID string) (string, error) {

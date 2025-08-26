@@ -17,7 +17,10 @@ type Config struct {
 func Load() *Config {
 	// 加载 .env 文件（如果存在）
 	if err := godotenv.Load(); err != nil {
-		log.Println("未找到 .env 文件，使用系统环境变量")
+		// go test
+		if err := godotenv.Load("../../.env"); err != nil {
+			log.Println("未找到 .env 文件，使用系统环境变量")
+		}
 	}
 
 	config := &Config{
