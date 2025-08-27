@@ -34,7 +34,10 @@ func GetSessionID(videoID string, token string) (string, error) {
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return "", fmt.Errorf("GetSessionID: 状态码 %d", resp.StatusCode())
+		if resp.StatusCode() == http.StatusForbidden {
+			return "", fmt.Errorf("状态码 %d - 会员限定内容", resp.StatusCode())
+		}
+		return "", fmt.Errorf("状态码 %d", resp.StatusCode())
 	}
 
 	return sessionIDResponse.Data.SessionID, nil

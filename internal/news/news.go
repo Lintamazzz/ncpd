@@ -106,7 +106,7 @@ func GetArticle(fcSiteID int, articleCode string, token string) (*Article, error
 	}
 
 	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("GetVideoDetails: 状态码 %d", resp.StatusCode())
+		return nil, fmt.Errorf("状态码 %d", resp.StatusCode())
 	}
 
 	return articleResponse.Data.Article.Article, nil

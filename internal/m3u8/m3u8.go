@@ -73,7 +73,6 @@ func GetBestQuality(streams []StreamInfo) *StreamInfo {
 	return &bestStream
 }
 
-
 // GetIndex 获取index.m3u8文件内容
 func GetIndex(sessionID string) (string, error) {
 	client := resty.New()
@@ -89,7 +88,7 @@ func GetIndex(sessionID string) (string, error) {
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return "", fmt.Errorf("GetIndex: 状态码 %d", resp.StatusCode())
+		return "", fmt.Errorf("状态码 %d", resp.StatusCode())
 	}
 
 	return resp.String(), nil

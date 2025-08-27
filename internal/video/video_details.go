@@ -105,7 +105,7 @@ func GetVideoDetails(fcSiteID int, contentCode string) (*VideoDetails, error) {
 	}
 
 	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("GetVideoDetails: 状态码 %d", resp.StatusCode())
+		return nil, fmt.Errorf("状态码 %d", resp.StatusCode())
 	}
 
 	return response.Data.VideoPage, nil

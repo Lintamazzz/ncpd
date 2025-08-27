@@ -105,7 +105,7 @@ func (tm *tokenManager) refreshOAuthToken() (string, error) {
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return "", fmt.Errorf("refreshOAuthToken: 状态码 %d", resp.StatusCode())
+		return "", fmt.Errorf("状态码 %d", resp.StatusCode())
 	}
 
 	// 保存新的 token 信息

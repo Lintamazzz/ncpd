@@ -45,7 +45,7 @@ func GetChannels() (*ChannelsResponse, error) {
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("channel.GetChannels: 状态码 %d", resp.StatusCode())
+		return nil, fmt.Errorf("状态码 %d", resp.StatusCode())
 	}
 
 	return &channelsResponse, nil
@@ -94,7 +94,7 @@ func GetChannelByDomain(domain string) (*ContentProvider, error) {
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("channel.GetChannelByDomain: 状态码 %d", resp.StatusCode())
+		return nil, fmt.Errorf("状态码 %d", resp.StatusCode())
 	}
 
 	if channelDomainResponse.Data.ContentProviders == nil {
@@ -136,7 +136,7 @@ func GetFanclubSiteInfo(siteID int) (*FanclubSiteInfo, error) {
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("channel.GetFanclubSiteInfo: 状态码 %d", resp.StatusCode())
+		return nil, fmt.Errorf("状态码 %d", resp.StatusCode())
 	}
 
 	return &fanclubSiteInfoResponse.Data.FanclubSite, nil

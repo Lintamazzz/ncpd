@@ -522,7 +522,7 @@ func downloadNews(baseSaveDir string, fcSiteID int) {
 
 		// 检查文章内容是否为空
 		if article.Contents == "" {
-			fmt.Printf("⚠️  文章内容为空，跳过处理\n")
+			fmt.Printf("⚠️  会员限定内容，跳过处理\n")
 			failCount++
 			failedArticles = append(failedArticles, articleSummary.ArticelTitle)
 			continue

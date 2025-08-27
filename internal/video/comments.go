@@ -46,7 +46,7 @@ func GetCommentsUserToken(videoID string) (string, error) {
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return "", fmt.Errorf("GetCommentsUserToken: 状态码 %d", resp.StatusCode())
+		return "", fmt.Errorf("状态码 %d", resp.StatusCode())
 	}
 
 	return commentsUserTokenResponse.Data.AccessToken, nil
@@ -74,7 +74,7 @@ func GetComments(commentsUserToken string, groupID string, startTime int) ([]Mes
 	}
 
 	if res.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("GetComments: 状态码 %d", res.StatusCode())
+		return nil, fmt.Errorf("状态码 %d", res.StatusCode())
 	}
 
 	return commentsResponse, nil
