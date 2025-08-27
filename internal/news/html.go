@@ -16,7 +16,7 @@ import (
 )
 
 // ProcessArticleWithOutputDir 处理文章并指定图片输出目录
-func ProcessArticleWithOutputDir(article *Article, templateHTML, outputDir string) (string, error) {
+func ProcessArticleWithOutputDir(article *Article, templateHTML, outputDir string, channelThumbnailURL string) (string, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(templateHTML))
 	if err != nil {
 		return "", err
@@ -29,8 +29,14 @@ func ProcessArticleWithOutputDir(article *Article, templateHTML, outputDir strin
 	}
 
 	// 下载缩略图并更新HTML中的img.src
-	if article.ThumbnailURL != "" {
-		thumbnailPath, err := downloadThumbnail(article.ThumbnailURL, outputDir)
+	thumbnailURL := article.ThumbnailURL
+	if thumbnailURL == "" && channelThumbnailURL != "" {
+		thumbnailURL = channelThumbnailURL
+		fmt.Printf("使用频道默认封面: %s\n", thumbnailURL)
+	}
+
+	if thumbnailURL != "" {
+		thumbnailPath, err := downloadThumbnail(thumbnailURL, outputDir)
 		if err != nil {
 			fmt.Printf("下载缩略图失败: %v\n", err)
 		} else {

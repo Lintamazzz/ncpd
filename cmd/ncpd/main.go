@@ -65,13 +65,19 @@ func main() {
 
 	// 2. 根据选择的内容类型执行相应的操作
 
+	// 获取频道默认封面地址
+	defaultThumbnailURL := ""
+	if channelInfo != nil {
+		defaultThumbnailURL = channelInfo.ThumbnailImageURL
+	}
+
 	// 如果选择了新闻，先下载新闻
 	if downloadOptions.News {
 		if !confirmNewsDownload() {
 			fmt.Println("\n❌ 用户取消下载新闻，程序退出")
 			return
 		}
-		downloadNews(baseSaveDir, fcSiteID)
+		downloadNews(baseSaveDir, fcSiteID, defaultThumbnailURL)
 	}
 
 	// 如果选择了视频相关的内容，需要获取视频列表
@@ -103,7 +109,7 @@ func main() {
 		}
 
 		if downloadOptions.Thumbnail {
-			downloadThumbnails(baseSaveDir, selectedVideos)
+			downloadThumbnails(baseSaveDir, selectedVideos, defaultThumbnailURL)
 		}
 
 		if downloadOptions.Danmaku {
@@ -300,7 +306,7 @@ func saveVideoDetails(baseSaveDir string, fcSiteID int, selectedVideos []video.V
 	fmt.Printf(strings.Repeat("=", 50) + "\n")
 }
 
-func downloadThumbnails(baseSaveDir string, selectedVideos []video.VideoDetails) {
+func downloadThumbnails(baseSaveDir string, selectedVideos []video.VideoDetails, defaultThumbnailURL string) {
 	// 记录成功和失败的视频数量
 	var successCount, failCount int
 	// 记录失败的视频列表
@@ -314,17 +320,23 @@ func downloadThumbnails(baseSaveDir string, selectedVideos []video.VideoDetails)
 		saveDir, _ := getSavePathAndName(video, baseSaveDir)
 		saveName := "thumbnail"
 
-		// 检查缩略图URL是否为空
-		if video.ThumbnailURL == "" {
-			fmt.Printf("❌ 缩略图URL为空\n")
-			failCount++
-			failedVideos = append(failedVideos, video.Title)
-			continue
+		// 确定要下载的缩略图URL
+		thumbnailURL := video.ThumbnailURL
+		if thumbnailURL == "" {
+			if defaultThumbnailURL != "" {
+				thumbnailURL = defaultThumbnailURL
+				fmt.Printf("   使用频道默认封面: %s\n", thumbnailURL)
+			} else {
+				fmt.Printf("❌ 缩略图URL为空且无频道默认封面\n")
+				failCount++
+				failedVideos = append(failedVideos, video.Title)
+				continue
+			}
 		}
 
 		// 下载缩略图
 		thumbnailFile := filepath.Join(saveDir, saveName+".jpg")
-		if err := downloadImage(video.ThumbnailURL, thumbnailFile); err != nil {
+		if err := downloadImage(thumbnailURL, thumbnailFile); err != nil {
 			fmt.Printf("❌ 下载缩略图失败: %v\n", err)
 			failCount++
 			failedVideos = append(failedVideos, video.Title)
@@ -477,7 +489,7 @@ func downloadDanmaku(baseSaveDir string, fcSiteID int, selectedVideos []video.Vi
 	fmt.Printf(strings.Repeat("=", 50) + "\n")
 }
 
-func downloadNews(baseSaveDir string, fcSiteID int) {
+func downloadNews(baseSaveDir string, fcSiteID int, defaultThumbnailURL string) {
 	fmt.Printf("\n=== 开始下载频道新闻 ===\n")
 
 	// 获取 token
@@ -529,7 +541,7 @@ func downloadNews(baseSaveDir string, fcSiteID int) {
 		}
 
 		// 生成HTML文件
-		if err := generateArticleHTML(article, string(templateHTML), baseSaveDir); err != nil {
+		if err := generateArticleHTML(article, string(templateHTML), baseSaveDir, defaultThumbnailURL); err != nil {
 			fmt.Printf("❌ 生成HTML失败: %v\n", err)
 			failCount++
 			failedArticles = append(failedArticles, articleSummary.ArticelTitle)
@@ -557,7 +569,7 @@ func downloadNews(baseSaveDir string, fcSiteID int) {
 }
 
 // generateArticleHTML 为单篇文章生成HTML文件
-func generateArticleHTML(article *news.Article, templateHTML string, baseSaveDir string) error {
+func generateArticleHTML(article *news.Article, templateHTML string, baseSaveDir string, defaultThumbnailURL string) error {
 	// 清理文章标题作为文件夹名
 	cleanTitle := sanitizeFilename(article.ArticelTitle)
 
@@ -579,7 +591,7 @@ func generateArticleHTML(article *news.Article, templateHTML string, baseSaveDir
 	}
 
 	// 生成HTML内容，图片保存到文章目录
-	html, err := news.ProcessArticleWithOutputDir(article, templateHTML, outputDir)
+	html, err := news.ProcessArticleWithOutputDir(article, templateHTML, outputDir, defaultThumbnailURL)
 	if err != nil {
 		return fmt.Errorf("处理文章失败: %w", err)
 	}
