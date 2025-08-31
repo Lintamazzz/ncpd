@@ -6,6 +6,7 @@ import (
 	"io"
 	"ncpd/internal/auth"
 	"ncpd/internal/channel"
+	"ncpd/internal/client"
 	"ncpd/internal/m3u8"
 	"ncpd/internal/news"
 	"ncpd/internal/video"
@@ -35,7 +36,20 @@ func (d *DownloadOptions) HasAnySelection() bool {
 }
 
 func main() {
-	// 0. 用户输入关键词，搜索并选择要下载的频道
+	// 0. 用户选择平台和频道
+	selectedPlatform, err := selectPlatform()
+	if err != nil {
+		fmt.Printf("❌ 选择平台失败: %v\n", err)
+		return
+	}
+
+	// 初始化客户端
+	if err := client.InitClientWithPlatform(selectedPlatform); err != nil {
+		fmt.Printf("❌ 初始化客户端失败: %v\n", err)
+		return
+	}
+
+	// 用户输入关键词，搜索并选择要下载的频道
 	fcSiteID, err := selectChannelDomain()
 	if err != nil {
 		fmt.Printf("❌ 选择频道失败: %v\n", err)
@@ -687,7 +701,7 @@ func selectChannelDomain() (int, error) {
 			huh.NewGroup(
 				huh.NewInput().
 					Title("请输入频道域名或关键字").
-					Placeholder(`"https://nicochannel.jp/abcd" or "abc"`).
+					Placeholder(fmt.Sprintf(`"https://%s/abcdef" or "abc"`, client.CurrentPlatform.Domain)).
 					Value(&searchKeyword).
 					Validate(func(s string) error {
 						if s == "" {
@@ -955,6 +969,41 @@ func confirmDownload(selectedVideos []video.VideoDetails) bool {
 	}
 
 	return confirmDownload
+}
+
+// selectPlatform 让用户选择平台
+func selectPlatform() (*client.Platform, error) {
+	// 创建选项列表
+	var options []huh.Option[int]
+	for i, platform := range client.SupportedPlatforms {
+		options = append(options, huh.Option[int]{
+			Key:   platform.Name,
+			Value: i,
+		})
+	}
+
+	// 创建选择表单
+	var selectedIndex int
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[int]().
+				Title("请选择要下载的平台").
+				Options(options...).
+				Value(&selectedIndex),
+		),
+	)
+
+	// 运行表单
+	if err := form.Run(); err != nil {
+		return nil, fmt.Errorf("选择平台时出错: %w", err)
+	}
+
+	// 返回选中的平台
+	if selectedIndex >= 0 && selectedIndex < len(client.SupportedPlatforms) {
+		return &client.SupportedPlatforms[selectedIndex], nil
+	}
+
+	return nil, fmt.Errorf("无效的平台选择")
 }
 
 // confirmNewsDownload 确认下载新闻

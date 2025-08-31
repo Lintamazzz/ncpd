@@ -2,7 +2,6 @@ package client
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 
@@ -24,14 +23,8 @@ func Get() *resty.Client {
 func initClient() {
 	restyClient = resty.New()
 
-	// 设置 API Base URL
-	baseURL, err := getAPIBaseURL()
-	if err != nil {
-		log.Printf("获取站点设置失败: %v，使用默认值", err)
-		baseURL = "https://api.nicochannel.jp/fc"
-	}
-	restyClient.SetBaseURL(baseURL)
-	log.Printf("设置 API Base URL: %s", baseURL)
+	// 默认 Base URL
+	restyClient.SetBaseURL(CurrentPlatform.DefaultAPIBaseURL)
 
 	// 统一错误处理
 	restyClient.OnAfterResponse(func(c *resty.Client, resp *resty.Response) error {
@@ -54,28 +47,4 @@ type HTTPError struct {
 
 func (e *HTTPError) Error() string {
 	return fmt.Sprintf("HTTP %d %s", e.StatusCode, e.StatusText)
-}
-
-type SiteSettings struct {
-	PlatformID     string `json:"platform_id"`
-	FanclubSiteID  string `json:"fanclub_site_id"`
-	FanclubGroupID string `json:"fanclub_group_id"`
-	APIBaseURL     string `json:"api_base_url"`
-}
-
-func getAPIBaseURL() (string, error) {
-	var settings SiteSettings
-	resp, err := resty.New().R().
-		SetResult(&settings).
-		Get("https://nicochannel.jp/site/settings.json")
-
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return "", fmt.Errorf("状态码 %d", resp.StatusCode())
-	}
-
-	return settings.APIBaseURL, nil
 }

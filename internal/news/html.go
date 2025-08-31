@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"ncpd/internal/client"
+
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -106,15 +108,7 @@ func downloadAndReplaceImages(contents, customOutputDir string) (string, error) 
 }
 
 // 下载单个图片
-func downloadImage(client *http.Client, imageURL, outputDir string) (string, error) {
-	// 构建完整的URL
-	if !strings.HasPrefix(imageURL, "http") {
-		if strings.HasPrefix(imageURL, "//") {
-			imageURL = "https:" + imageURL
-		} else {
-			imageURL = "https://nicochannel.jp" + imageURL
-		}
-	}
+func downloadImage(c *http.Client, imageURL, outputDir string) (string, error) {
 
 	// 创建请求
 	req, err := http.NewRequest("GET", imageURL, nil)
@@ -123,10 +117,10 @@ func downloadImage(client *http.Client, imageURL, outputDir string) (string, err
 	}
 
 	// 添加Referer头
-	req.Header.Set("Referer", "https://nicochannel.jp/")
+	req.Header.Set("Referer", fmt.Sprintf("https://%s/", client.CurrentPlatform.Domain))
 
 	// 发送HTTP请求
-	resp, err := client.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("请求图片失败: %w", err)
 	}
@@ -234,17 +228,8 @@ func replaceButtonTags(contents string) string {
 // downloadThumbnail 下载缩略图
 func downloadThumbnail(thumbnailURL, outputDir string) (string, error) {
 	// 创建HTTP客户端
-	client := &http.Client{
+	c := &http.Client{
 		Timeout: 30 * time.Second,
-	}
-
-	// 构建完整的URL
-	if !strings.HasPrefix(thumbnailURL, "http") {
-		if strings.HasPrefix(thumbnailURL, "//") {
-			thumbnailURL = "https:" + thumbnailURL
-		} else {
-			thumbnailURL = "https://nicochannel.jp" + thumbnailURL
-		}
 	}
 
 	// 创建请求
@@ -254,10 +239,10 @@ func downloadThumbnail(thumbnailURL, outputDir string) (string, error) {
 	}
 
 	// 添加Referer头
-	req.Header.Set("Referer", "https://nicochannel.jp/")
+	req.Header.Set("Referer", fmt.Sprintf("https://%s/", client.CurrentPlatform.Domain))
 
 	// 发送HTTP请求
-	resp, err := client.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("请求缩略图失败: %w", err)
 	}

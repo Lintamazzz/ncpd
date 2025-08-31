@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -92,12 +93,13 @@ func (tm *tokenManager) refreshOAuthToken() (string, error) {
 	_, err := tm.client.R().
 		SetFormData(map[string]string{
 			"client_id":     tm.config.NicoClientID,
-			"redirect_uri":  "https://nicochannel.jp/login/login-redirect",
+			"redirect_uri":  fmt.Sprintf("https://%s/login/login-redirect", client.CurrentPlatform.Domain),
 			"grant_type":    "refresh_token",
 			"refresh_token": refreshToken,
 		}).
 		SetResult(&oauthResp).
-		Post("https://auth.nicochannel.jp/oauth/token")
+		SetPathParam("platformDomain", client.CurrentPlatform.Domain).
+		Post("https://auth.{platformDomain}/oauth/token")
 
 	if err != nil {
 		return "", err

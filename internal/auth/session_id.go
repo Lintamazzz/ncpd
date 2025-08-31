@@ -20,7 +20,7 @@ func GetSessionID(videoID string, token string) (string, error) {
 
 	_, err := c.R().
 		SetHeader("fc_use_device", "null").
-		SetHeader("Origin", "https://nicochannel.jp").
+		SetHeader("Origin", fmt.Sprintf("https://%s", client.CurrentPlatform.Domain)).
 		SetAuthToken(token).
 		SetPathParam("videoId", videoID).
 		SetBody(map[string]string{}).
