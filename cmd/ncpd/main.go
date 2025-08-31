@@ -524,7 +524,7 @@ func downloadNews(baseSaveDir string, fcSiteID int, defaultThumbnailURL string) 
 	fmt.Printf("✅ 获取到 %d 篇文章\n", len(articles))
 
 	// 读取HTML模板
-	templateHTML, err := os.ReadFile("assets/template.html")
+	templateHTML, err := os.ReadFile(client.CurrentPlatform.TemplateFile)
 	if err != nil {
 		fmt.Printf("❌ 读取模板文件失败: %v\n", err)
 		return

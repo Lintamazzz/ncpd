@@ -11,12 +11,13 @@ type Platform struct {
 	Name              string
 	Domain            string
 	DefaultAPIBaseURL string
+	TemplateFile      string
 }
 
 // 支持的平台列表
 var SupportedPlatforms = []Platform{
-	{Name: "Nicochannel+", Domain: "nicochannel.jp", DefaultAPIBaseURL: "https://api.nicochannel.jp/fc"},
-	{Name: "QloveR", Domain: "qlover.jp", DefaultAPIBaseURL: "https://api.qlover.jp/fc"},
+	{Name: "Nicochannel+", Domain: "nicochannel.jp", DefaultAPIBaseURL: "https://api.nicochannel.jp/fc", TemplateFile: "assets/template_white_bg.html"},
+	{Name: "QloveR", Domain: "qlover.jp", DefaultAPIBaseURL: "https://api.qlover.jp/fc", TemplateFile: "assets/template_black_bg.html"},
 }
 
 // 当前选择的平台
