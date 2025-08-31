@@ -8,12 +8,22 @@ import (
 )
 
 type Article struct {
-	ID           int    `json:"id"`
-	ArticleCode  string `json:"article_code"`
-	ArticelTitle string `json:"article_title"`
-	Contents     string `json:"contents"`
-	PublishAt    string `json:"publish_at"`
-	ThumbnailURL string `json:"thumbnail_url"`
+	ID           int           `json:"id"`
+	ArticleCode  string        `json:"article_code"`
+	ArticelTitle string        `json:"article_title"`
+	Contents     string        `json:"contents"`
+	PublishAt    string        `json:"publish_at"`
+	ThumbnailURL string        `json:"thumbnail_url"`
+	ArticleTheme *ArticleTheme `json:"article_theme"`
+}
+
+type ArticleTheme struct {
+	ArticleListLayoutType *ArticleListLayoutType `json:"article_list_layout_type"`
+}
+
+type ArticleListLayoutType struct {
+	ID         int    `json:"id"`
+	LayoutName string `json:"layout_name"`
 }
 
 type ArticleResponse struct {

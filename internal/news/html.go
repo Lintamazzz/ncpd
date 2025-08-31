@@ -17,6 +17,27 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+// determineThumbnailURL 根据文章布局类型决定缩略图URL
+func determineThumbnailURL(article *Article, channelThumbnailURL string) string {
+	// 无布局信息，使用频道默认封面
+	if article.ArticleTheme == nil || article.ArticleTheme.ArticleListLayoutType == nil {
+		return channelThumbnailURL
+	}
+
+	layoutID := article.ArticleTheme.ArticleListLayoutType.ID
+	if layoutID == 3 {
+		// リスト型：强制使用频道默认封面
+		return channelThumbnailURL
+	}
+
+	// 其他情况，优先使用文章封面，没有则用频道默认封面
+	if article.ThumbnailURL != "" {
+		fmt.Printf("使用文章封面: %s\n", article.ThumbnailURL)
+		return article.ThumbnailURL
+	}
+	return channelThumbnailURL
+}
+
 // ProcessArticleWithOutputDir 处理文章并指定图片输出目录
 func ProcessArticleWithOutputDir(article *Article, templateHTML, outputDir string, channelThumbnailURL string) (string, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(templateHTML))
@@ -30,19 +51,13 @@ func ProcessArticleWithOutputDir(article *Article, templateHTML, outputDir strin
 		return "", fmt.Errorf("处理图片时出错: %w", err)
 	}
 
-	// 下载缩略图并更新HTML中的img.src
-	thumbnailURL := article.ThumbnailURL
-	if thumbnailURL == "" && channelThumbnailURL != "" {
-		thumbnailURL = channelThumbnailURL
-		fmt.Printf("使用频道默认封面: %s\n", thumbnailURL)
-	}
-
+	// 根据布局策略确定缩略图URL并下载
+	thumbnailURL := determineThumbnailURL(article, channelThumbnailURL)
 	if thumbnailURL != "" {
 		thumbnailPath, err := downloadThumbnail(thumbnailURL, outputDir)
 		if err != nil {
 			fmt.Printf("下载缩略图失败: %v\n", err)
 		} else {
-			// 更新HTML模板中的缩略图路径
 			doc.Find(".Thumbnail img").SetAttr("src", thumbnailPath)
 		}
 	}
