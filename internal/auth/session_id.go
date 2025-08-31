@@ -1,10 +1,10 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
+	"ncpd/internal/client"
 	"net/http"
-
-	"github.com/go-resty/resty/v2"
 )
 
 type SessionIDResponse struct {
@@ -14,30 +14,27 @@ type SessionIDResponse struct {
 }
 
 func GetSessionID(videoID string, token string) (string, error) {
-	client := resty.New()
+	c := client.Get()
 
 	var sessionIDResponse SessionIDResponse
 
-	baseURL := "https://api.nicochannel.jp/fc/video_pages/%s/session_ids"
-	URL := fmt.Sprintf(baseURL, videoID)
-
-	resp, err := client.R().
+	_, err := c.R().
 		SetHeader("fc_use_device", "null").
 		SetHeader("Origin", "https://nicochannel.jp").
 		SetAuthToken(token).
+		SetPathParam("videoId", videoID).
 		SetBody(map[string]string{}).
 		SetResult(&sessionIDResponse).
-		Post(URL)
+		Post("/video_pages/{videoId}/session_ids")
 
 	if err != nil {
-		return "", fmt.Errorf("GetSessionID: %w", err)
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		if resp.StatusCode() == http.StatusForbidden {
-			return "", fmt.Errorf("状态码 %d - 会员限定内容", resp.StatusCode())
+		var httpErr *client.HTTPError
+		if errors.As(err, &httpErr) {
+			if httpErr.StatusCode == http.StatusForbidden {
+				return "", fmt.Errorf("状态码 %d - 会员限定内容", httpErr.StatusCode)
+			}
 		}
-		return "", fmt.Errorf("状态码 %d", resp.StatusCode())
+		return "", err
 	}
 
 	return sessionIDResponse.Data.SessionID, nil

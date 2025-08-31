@@ -2,8 +2,9 @@ package video
 
 import (
 	"fmt"
+	"strconv"
 
-	"github.com/go-resty/resty/v2"
+	"ncpd/internal/client"
 )
 
 type VideoPagesResponse struct {
@@ -16,25 +17,25 @@ type VideoPagesResponse struct {
 }
 
 func GetVideoList(fcSiteID int) ([]VideoDetails, error) {
-	client := resty.New()
+	client := client.Get()
 
 	// 这个地址返回的视频信息不全，获取更详细的信息需要使用 GetVideoDetails
 	var allVideos []VideoDetails
 	page := 1
-	perPage := 10
-	baseURL := "https://api.nicochannel.jp/fc/v2/fanclub_sites/%d/video_pages?sort=display_date&vod_type=0&per_page=%d&page=%d"
+	size := 10
 
 	fmt.Printf("开始获取 频道ID: %d 的所有视频信息...\n", fcSiteID)
 
 	for {
 		var response VideoPagesResponse
 
-		url := fmt.Sprintf(baseURL, fcSiteID, perPage, page)
-
 		resp, err := client.R().
 			SetHeader("fc_use_device", "null").
+			SetPathParam("fcSiteId", strconv.Itoa(fcSiteID)).
+			SetPathParam("size", strconv.Itoa(size)).
+			SetPathParam("page", strconv.Itoa(page)).
 			SetResult(&response).
-			Get(url)
+			Get("/v2/fanclub_sites/{fcSiteId}/video_pages?sort=display_date&vod_type=0&per_page={size}&page={page}")
 
 		if err != nil {
 			return nil, fmt.Errorf("GetVideoList: 请求第 %d 页失败 %w", page, err)
@@ -56,8 +57,8 @@ func GetVideoList(fcSiteID int) ([]VideoDetails, error) {
 			page, len(response.Data.VideoPages.List), len(allVideos))
 
 		// 如果当前页的数据少于每页数量，说明已经是最后一页
-		if len(response.Data.VideoPages.List) < perPage {
-			fmt.Printf("第 %d 页数据少于 %d 个，已到达最后一页\n", page, perPage)
+		if len(response.Data.VideoPages.List) < size {
+			fmt.Printf("第 %d 页数据少于 %d 个，已到达最后一页\n", page, size)
 			break
 		}
 

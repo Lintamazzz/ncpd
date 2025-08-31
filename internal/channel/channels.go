@@ -2,9 +2,9 @@ package channel
 
 import (
 	"fmt"
-	"net/http"
+	"strconv"
 
-	"github.com/go-resty/resty/v2"
+	"ncpd/internal/client"
 )
 
 type ChannelsResponse struct {
@@ -33,19 +33,15 @@ type FanclubSite struct {
 
 // 获取频道列表
 func GetChannels() (*ChannelsResponse, error) {
-	client := resty.New()
+	client := client.Get()
 
 	var channelsResponse ChannelsResponse
-	resp, err := client.R().
+	_, err := client.R().
 		SetResult(&channelsResponse).
-		Get("https://api.nicochannel.jp/fc/content_providers/channels")
+		Get("/content_providers/channels")
 
 	if err != nil {
-		return nil, fmt.Errorf("channel.GetChannels: %w", err)
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("状态码 %d", resp.StatusCode())
+		return nil, err
 	}
 
 	return &channelsResponse, nil
@@ -79,22 +75,16 @@ func GetChannelByID(id int) (*ContentProvider, error) {
 
 // 根据域名查找特定频道的 ID
 func GetChannelByDomain(domain string) (*ContentProvider, error) {
-	client := resty.New()
-
-	baseURL := "https://api.nicochannel.jp/fc/content_providers/channel_domain?current_site_domain=%s"
-	URL := fmt.Sprintf(baseURL, domain)
+	client := client.Get()
 
 	var channelDomainResponse ChannelDomainResponse
-	resp, err := client.R().
+	_, err := client.R().
+		SetPathParam("domain", domain).
 		SetResult(&channelDomainResponse).
-		Get(URL)
+		Get("/content_providers/channel_domain?current_site_domain={domain}")
 
 	if err != nil {
-		return nil, fmt.Errorf("channel.GetChannelByDomain: %w", err)
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("状态码 %d", resp.StatusCode())
+		return nil, err
 	}
 
 	if channelDomainResponse.Data.ContentProviders == nil {
@@ -121,22 +111,16 @@ type FanclubSiteInfo struct {
 
 // GetFanclubSiteInfo 根据 fc site id 获取 fanclub 信息
 func GetFanclubSiteInfo(siteID int) (*FanclubSiteInfo, error) {
-	client := resty.New()
-
-	baseURL := "https://api.nicochannel.jp/fc/fanclub_sites/%d/page_base_info"
-	URL := fmt.Sprintf(baseURL, siteID)
+	client := client.Get()
 
 	var fanclubSiteInfoResponse FanclubSiteInfoResponse
-	resp, err := client.R().
+	_, err := client.R().
+		SetPathParam("siteId", strconv.Itoa(siteID)).
 		SetResult(&fanclubSiteInfoResponse).
-		Get(URL)
+		Get("/fanclub_sites/{siteId}/page_base_info")
 
 	if err != nil {
-		return nil, fmt.Errorf("channel.GetFanclubSiteInfo: %w", err)
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("状态码 %d", resp.StatusCode())
+		return nil, err
 	}
 
 	return &fanclubSiteInfoResponse.Data.FanclubSite, nil

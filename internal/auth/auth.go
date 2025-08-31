@@ -1,13 +1,12 @@
 package auth
 
 import (
-	"fmt"
 	"log"
-	"net/http"
 	"sync"
 	"time"
 
 	"ncpd/config"
+	"ncpd/internal/client"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -40,7 +39,7 @@ var (
 func getTokenManager() *tokenManager {
 	once.Do(func() {
 		instance = &tokenManager{
-			client: resty.New(),
+			client: client.Get(),
 			config: config.Load(),
 		}
 	})
@@ -90,7 +89,7 @@ func (tm *tokenManager) refreshOAuthToken() (string, error) {
 		refreshToken = tm.config.NicoRefreshToken
 	}
 
-	resp, err := tm.client.R().
+	_, err := tm.client.R().
 		SetFormData(map[string]string{
 			"client_id":     tm.config.NicoClientID,
 			"redirect_uri":  "https://nicochannel.jp/login/login-redirect",
@@ -101,11 +100,7 @@ func (tm *tokenManager) refreshOAuthToken() (string, error) {
 		Post("https://auth.nicochannel.jp/oauth/token")
 
 	if err != nil {
-		return "", fmt.Errorf("refreshOAuthToken: %w", err)
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return "", fmt.Errorf("状态码 %d", resp.StatusCode())
+		return "", err
 	}
 
 	// 保存新的 token 信息

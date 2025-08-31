@@ -1,13 +1,11 @@
 package m3u8
 
 import (
-	"fmt"
-	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/go-resty/resty/v2"
+	"ncpd/internal/client"
 )
 
 // StreamInfo 表示单个流的详细信息
@@ -75,20 +73,14 @@ func GetBestQuality(streams []StreamInfo) *StreamInfo {
 
 // GetIndex 获取index.m3u8文件内容
 func GetIndex(sessionID string) (string, error) {
-	client := resty.New()
-
-	baseURL := "https://hls-auth.cloud.stream.co.jp/auth/index.m3u8?session_id=%s"
-	url := fmt.Sprintf(baseURL, sessionID)
+	client := client.Get()
 
 	resp, err := client.R().
-		Get(url)
+		SetPathParam("sessionId", sessionID).
+		Get("https://hls-auth.cloud.stream.co.jp/auth/index.m3u8?session_id={sessionId}")
 
 	if err != nil {
-		return "", fmt.Errorf("GetIndex: %w", err)
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return "", fmt.Errorf("状态码 %d", resp.StatusCode())
+		return "", err
 	}
 
 	return resp.String(), nil

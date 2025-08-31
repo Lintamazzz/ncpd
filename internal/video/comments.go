@@ -1,12 +1,11 @@
 package video
 
 import (
-	"fmt"
-	"net/http"
 	"sort"
+	"strconv"
 	"time"
 
-	"github.com/go-resty/resty/v2"
+	"ncpd/internal/client"
 )
 
 type CommentsUserTokenResponse struct {
@@ -31,50 +30,40 @@ type Message struct {
 }
 
 func GetCommentsUserToken(videoID string) (string, error) {
-	client := resty.New()
-
-	baseURL := "https://api.nicochannel.jp/fc/video_pages/%s/comments_user_token"
-	URL := fmt.Sprintf(baseURL, videoID)
+	client := client.Get()
 
 	var commentsUserTokenResponse CommentsUserTokenResponse
-	resp, err := client.R().
+	_, err := client.R().
+		SetPathParam("videoId", videoID).
 		SetResult(&commentsUserTokenResponse).
-		Get(URL)
+		Get("/video_pages/{videoId}/comments_user_token")
 
 	if err != nil {
-		return "", fmt.Errorf("GetCommentsUserToken: %w", err)
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return "", fmt.Errorf("状态码 %d", resp.StatusCode())
+		return "", err
 	}
 
 	return commentsUserTokenResponse.Data.AccessToken, nil
 }
 
 func GetComments(commentsUserToken string, groupID string, startTime int) ([]Message, error) {
-	client := resty.New()
+	client := client.Get()
 
 	limit := 120
-	baseURL := "https://comm-api.sheeta.com/messages.history?oldest_playback_time=%d&sort_direction=asc&limit=%d&inclusive=true"
-	URL := fmt.Sprintf(baseURL, startTime, limit)
 
 	var commentsResponse []Message
-	res, err := client.R().
+	_, err := client.R().
 		SetHeader("content-type", "application/json").
+		SetPathParam("startTime", strconv.Itoa(startTime)).
+		SetPathParam("limit", strconv.Itoa(limit)).
 		SetBody(map[string]string{
 			"token":    commentsUserToken,
 			"group_id": groupID,
 		}).
 		SetResult(&commentsResponse).
-		Post(URL)
+		Post("https://comm-api.sheeta.com/messages.history?oldest_playback_time={startTime}&sort_direction=asc&limit={limit}&inclusive=true")
 
 	if err != nil {
-		return nil, fmt.Errorf("GetComments: %w", err)
-	}
-
-	if res.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("状态码 %d", res.StatusCode())
+		return nil, err
 	}
 
 	return commentsResponse, nil
@@ -89,7 +78,7 @@ func GetAllComments(commentsUserToken string, groupId string) ([]Message, error)
 		// 获取一批评论
 		comments, err := GetComments(commentsUserToken, groupId, startTime)
 		if err != nil {
-			return nil, fmt.Errorf("GetAllComments: %w", err)
+			return nil, err
 		}
 		count += len(comments)
 

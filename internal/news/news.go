@@ -2,8 +2,9 @@ package news
 
 import (
 	"fmt"
+	"strconv"
 
-	"github.com/go-resty/resty/v2"
+	"ncpd/internal/client"
 )
 
 type Article struct {
@@ -37,10 +38,9 @@ type ArticlesResponse struct {
 
 // 返回的 article.contents 不是原文，原文需要用 GetArticle 获取
 func GetArticleList(fcSiteID int) ([]Article, error) {
-	client := resty.New()
+	client := client.Get()
 	page := 1
 	size := 24
-	baseURL := "https://api.nicochannel.jp/fc/fanclub_sites/%d/article_themes/news/articles?per_page=%d&sort=published_at_desc&page=%d"
 
 	var allArticles []Article
 
@@ -48,19 +48,18 @@ func GetArticleList(fcSiteID int) ([]Article, error) {
 
 	for {
 		var articlesResponse ArticlesResponse
-		url := fmt.Sprintf(baseURL, fcSiteID, size, page)
 
-		resp, err := client.R().
+		_, err := client.R().
 			SetHeader("fc_use_device", "null").
+			SetPathParam("fcSiteId", strconv.Itoa(fcSiteID)).
+			SetPathParam("size", strconv.Itoa(size)).
+			SetPathParam("page", strconv.Itoa(page)).
 			SetResult(&articlesResponse).
-			Get(url)
+			Get("/fanclub_sites/{fcSiteId}/article_themes/news/articles?per_page={size}&sort=published_at_desc&page={page}")
 
 		if err != nil {
 			return nil, fmt.Errorf("GetArticleList: 请求第 %d 页失败 %w", page, err)
 		}
-
-		// 打印响应状态码
-		fmt.Printf("第 %d 页响应状态码: %d\n", page, resp.StatusCode())
 
 		// 检查是否有数据
 		if len(articlesResponse.Data.ArticleTheme.Articles.List) == 0 {
@@ -88,25 +87,20 @@ func GetArticleList(fcSiteID int) ([]Article, error) {
 
 // 要带 token，不然会员内容 contents 会返回空
 func GetArticle(fcSiteID int, articleCode string, token string) (*Article, error) {
-	client := resty.New()
-
-	baseURL := "https://api.nicochannel.jp/fc/fanclub_sites/%d/article_themes/news/articles/%s"
-	url := fmt.Sprintf(baseURL, fcSiteID, articleCode)
+	client := client.Get()
 
 	var articleResponse ArticleResponse
 
-	resp, err := client.R().
+	_, err := client.R().
 		SetHeader("fc_use_device", "null").
 		SetAuthToken(token).
+		SetPathParam("fcSiteId", strconv.Itoa(fcSiteID)).
+		SetPathParam("articleCode", articleCode).
 		SetResult(&articleResponse).
-		Get(url)
+		Get("/fanclub_sites/{fcSiteId}/article_themes/news/articles/{articleCode}")
 
 	if err != nil {
-		return nil, fmt.Errorf("GetArticle: %w", err)
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("状态码 %d", resp.StatusCode())
+		return nil, err
 	}
 
 	return articleResponse.Data.Article.Article, nil

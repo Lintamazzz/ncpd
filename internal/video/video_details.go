@@ -1,10 +1,9 @@
 package video
 
 import (
-	"fmt"
 	"strconv"
 
-	"github.com/go-resty/resty/v2"
+	"ncpd/internal/client"
 )
 
 type VideoDetailsResponse struct {
@@ -87,25 +86,19 @@ type VideoStream struct {
 }
 
 func GetVideoDetails(fcSiteID int, contentCode string) (*VideoDetails, error) {
-	client := resty.New()
+	client := client.Get()
 
 	var response VideoDetailsResponse
 
-	baseURL := "https://api.nicochannel.jp/fc/video_pages/%s"
-	url := fmt.Sprintf(baseURL, contentCode)
-
-	resp, err := client.R().
+	_, err := client.R().
 		SetHeader("fc_site_id", strconv.Itoa(fcSiteID)).
 		SetHeader("fc_use_device", "null").
+		SetPathParam("contentCode", contentCode).
 		SetResult(&response).
-		Get(url)
+		Get("/video_pages/{contentCode}")
 
 	if err != nil {
-		return nil, fmt.Errorf("GetVideoDetails: %w", err)
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("状态码 %d", resp.StatusCode())
+		return nil, err
 	}
 
 	return response.Data.VideoPage, nil
